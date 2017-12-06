@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui opengl
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -29,20 +29,24 @@ SOURCES += \
     imageformat.cpp \
     particle_filter.cpp \
     customlabel.cpp \
-    trajectorywindow.cpp
+    trajectorywindow.cpp \
+    converter.cpp \
+    glwidget.cpp
 
 HEADERS += \
         trackingwindow.h \
     imageformat.h \
     particle_filter.hpp \
     customlabel.h \
-    trajectorywindow.h
+    trajectorywindow.h \
+    converter.h \
+    glwidget.h
 
 FORMS += \
         trackingwindow.ui
 
-DEPENDPATH += /opt/local/include
-INCLUDEPATH += /opt/local/include
+DEPENDPATH += /opt/local/include /usr/local/include
+INCLUDEPATH += /opt/local/include /usr/local/include
 LIBS += -L/usr/local/Cellar/opencv/3.3.1_1/lib \
      -lopencv_core \
      -lopencv_imgproc \
