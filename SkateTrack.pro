@@ -31,7 +31,7 @@ SOURCES += \
     customlabel.cpp \
     trajectorywindow.cpp \
     converter.cpp \
-    glwidget.cpp
+    trackingview.cpp
 
 HEADERS += \
         trackingwindow.h \
@@ -40,7 +40,7 @@ HEADERS += \
     customlabel.h \
     trajectorywindow.h \
     converter.h \
-    glwidget.h
+    trackingview.h
 
 FORMS += \
         trackingwindow.ui

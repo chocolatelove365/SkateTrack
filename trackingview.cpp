@@ -1,6 +1,6 @@
-#include "glwidget.h"
+#include "trackingview.h"
 
-GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
+TrackingView::TrackingView(QWidget *parent) : QGLWidget(parent)
 {
     timer = new QTimer();
     connect(timer, SIGNAL(timeout()), this, SLOT(loop()));
@@ -11,15 +11,15 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
     timer->start();
 }
 
-GLWidget::~GLWidget(){
+TrackingView::~TrackingView(){
     delete timer;
 }
 
-void GLWidget::loop(){
+void TrackingView::loop(){
     updateGL();
 }
 
-qreal GLWidget::windowPixelRatio() {
+qreal TrackingView::windowPixelRatio() {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     // windowHandle() might not be accessible until the window is displayed to screen.
     return windowHandle() ? windowHandle()->screen()->devicePixelRatio() : 1.0f;
@@ -28,7 +28,7 @@ qreal GLWidget::windowPixelRatio() {
 #endif
 }
 
-void GLWidget::mousePressEvent(QMouseEvent *event){
+void TrackingView::mousePressEvent(QMouseEvent *event){
     qreal pixelRatio = windowPixelRatio();
     int realX = event->x() * pixelRatio;
     int realY = event->y() * pixelRatio;
@@ -43,7 +43,7 @@ void GLWidget::mousePressEvent(QMouseEvent *event){
     qDebug() << "X: " + QString::number(X) + ", Y: " + QString::number(Y);
 }
 
-void GLWidget::load(){
+void TrackingView::load(){
     QString imageFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/image_calibration.JPG";
     image = cv::imread(imageFileName.toStdString().c_str() );
     imageWidth = image.size().width;
@@ -63,7 +63,7 @@ void GLWidget::load(){
            0.0, 0.0, 0.0, 1.0;
 }
 
-void GLWidget::initializeGL(){
+void TrackingView::initializeGL(){
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0,
                  GL_BGR_EXT, GL_UNSIGNED_BYTE, image.data);
@@ -73,7 +73,7 @@ void GLWidget::initializeGL(){
     glClearColor(0.f, 0.f, 0.f, 1.f);
 }
 
-void GLWidget::resizeGL(int w, int h){
+void TrackingView::resizeGL(int w, int h){
     qDebug() << "w: " + QString::number(w) + ", h: " + QString::number(h);
     if(w > h * aspect){
         viewWidth = (int)(h * aspect);
@@ -87,7 +87,7 @@ void GLWidget::resizeGL(int w, int h){
     viewY = (h - viewHeight) / 2;
 }
 
-void GLWidget::paintGL(){
+void TrackingView::paintGL(){
     glViewport(viewX, viewY, viewWidth, viewHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_PROJECTION);
@@ -119,7 +119,7 @@ void GLWidget::paintGL(){
     glFlush();
 }
 
-void GLWidget::drawRect(double w, double h){
+void TrackingView::drawRect(double w, double h){
     glColor4d(1.0, 0.0, 0.0, 1.0);
     glBegin(GL_LINE_LOOP);
     glVertex3d(+w/2, +h/2, 0.0);
@@ -129,7 +129,7 @@ void GLWidget::drawRect(double w, double h){
     glEnd();
 }
 
-void GLWidget::drawCircle(double x, double y, double radius, int n){
+void TrackingView::drawCircle(double x, double y, double radius, int n){
     glColor4d(1.0, 0.0, 0.0, 1.0);
     glBegin(GL_LINE_LOOP);
     for(int i = 0; i < n; i++){
@@ -140,7 +140,7 @@ void GLWidget::drawCircle(double x, double y, double radius, int n){
     glEnd();
 }
 
-void GLWidget::drawXYZAxis(double len){
+void TrackingView::drawXYZAxis(double len){
     glColor4d(1.0, 0.0, 0.0, 1.0);
     glBegin(GL_LINES);
     glVertex3d(0.0, 0.0, 0.0);

@@ -1,5 +1,5 @@
-#ifndef GLWIDGET_H
-#define GLWIDGET_H
+#ifndef TRACKINGVIEW_H
+#define TRACKINGVIEW_H
 
 #include <QGLWidget>
 
@@ -21,12 +21,12 @@
 #include <Eigen/Geometry>
 #include "converter.h"
 
-class GLWidget : public QGLWidget
+class TrackingView : public QGLWidget
 {
     Q_OBJECT
 public:
-    explicit GLWidget(QWidget *parent = nullptr);
-    ~GLWidget();
+    explicit TrackingView(QWidget *parent = nullptr);
+    ~TrackingView();
 
 signals:
 
@@ -59,4 +59,4 @@ private:
     Eigen::Matrix4d Rt;
 };
 
-#endif // GLWIDGET_H
+#endif // TRACKINGVIEW_H
