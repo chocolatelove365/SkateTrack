@@ -26,11 +26,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         trackingwindow.cpp \
-    imageformat.cpp
+    imageformat.cpp \
+    particle_filter.cpp \
+    customlabel.cpp \
+    trajectorywindow.cpp
 
 HEADERS += \
         trackingwindow.h \
-    imageformat.h
+    imageformat.h \
+    particle_filter.hpp \
+    customlabel.h \
+    trajectorywindow.h
 
 FORMS += \
         trackingwindow.ui
@@ -40,5 +46,6 @@ INCLUDEPATH += /opt/local/include
 LIBS += -L/usr/local/Cellar/opencv/3.3.1_1/lib \
      -lopencv_core \
      -lopencv_imgproc \
+    -lopencv_imgcodecs \
      -lopencv_highgui \
     -lopencv_videoio
