@@ -13,6 +13,7 @@
 #include "imageformat.h"
 #include "particle_filter.hpp"
 #include "customlabel.h"
+#include "trackingview.h"
 
 namespace Ui {
 class TrackingWindow;
@@ -44,6 +45,7 @@ private:
     Ui::TrackingWindow *ui;
     TrajectoryWindow *trajWin;
 
+    TrackingView *trackingView;
     CustomLabel *frameLabel;
     QPushButton *playButton;
     QSlider *timeSlider;

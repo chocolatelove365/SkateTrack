@@ -2,17 +2,17 @@
 
 TrackingView::TrackingView(QWidget *parent) : QGLWidget(parent)
 {
-    timer = new QTimer();
-    connect(timer, SIGNAL(timeout()), this, SLOT(loop()));
+//    timer = new QTimer();
+//    connect(timer, SIGNAL(timeout()), this, SLOT(loop()));
 
     load();
 
-    timer->setInterval(1);
-    timer->start();
+//    timer->setInterval(1);
+//    timer->start();
 }
 
 TrackingView::~TrackingView(){
-    delete timer;
+//    delete timer;
 }
 
 void TrackingView::loop(){
@@ -63,12 +63,21 @@ void TrackingView::load(){
            0.0, 0.0, 0.0, 1.0;
 }
 
-void TrackingView::initializeGL(){
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0,
-                 GL_BGR_EXT, GL_UNSIGNED_BYTE, image.data);
+void TrackingView::updateTexture(uint8_t *image){
+    glGenTextures(1, textures);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0,
+                 GL_BGR_EXT, GL_UNSIGNED_BYTE, image);
+}
+
+void TrackingView::initializeGL(){
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0,
+                 GL_BGR_EXT, GL_UNSIGNED_BYTE, image.data);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
 }
@@ -88,6 +97,8 @@ void TrackingView::resizeGL(int w, int h){
 }
 
 void TrackingView::paintGL(){
+    updateTexture(image.data);
+
     glViewport(viewX, viewY, viewWidth, viewHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_PROJECTION);

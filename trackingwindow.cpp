@@ -11,6 +11,7 @@ TrackingWindow::TrackingWindow(QWidget *parent) :
 
     QWidget *mainWidget = new QWidget();
     QVBoxLayout *mainLayout = new QVBoxLayout();
+    trackingView = new TrackingView();
     frameLabel = new CustomLabel();
     playButton = new QPushButton();
     timeSlider = new QSlider(Qt::Horizontal);
@@ -20,8 +21,10 @@ TrackingWindow::TrackingWindow(QWidget *parent) :
     connect(playButton, SIGNAL(clicked()), this, SLOT(playButtonClicked()));
     connect(timeSlider, SIGNAL(valueChanged(int)), this, SLOT(timeSliderValueChanged(int)));
     connect(timer, SIGNAL(timeout()), this, SLOT(loop()));
+//    connect(timer, SIGNAL(timeout()), trackingView, SLOT(loop()));
     connect(timer, SIGNAL(timeout()), trajWin, SLOT(loop()));
 
+//    mainLayout->addWidget(trackingView);
     mainLayout->addWidget(frameLabel);
     mainLayout->addWidget(playButton);
     mainLayout->addWidget(timeSlider);
@@ -201,5 +204,7 @@ void TrackingWindow::loop(){
         render(outFrame);
         qFrame = ImageFormat::Mat2QImage(outFrame);
         frameLabel->setPixmap(QPixmap::fromImage(qFrame));
+        trackingView->image = frame;
+        trackingView->updateGL();
     }
 }
