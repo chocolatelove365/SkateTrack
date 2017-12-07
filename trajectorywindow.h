@@ -1,7 +1,8 @@
 #ifndef TRAJECTORYWINDOW_H
 #define TRAJECTORYWINDOW_H
 
-#include <QWidget>
+#include <QGLWidget>
+//#include <QWidget>
 #include <opencv2/opencv.hpp>
 #include <QVBoxLayout>
 #include <QTimer>
@@ -9,7 +10,7 @@
 #include "customlabel.h"
 #include "imageformat.h"
 
-class TrajectoryWindow : public QWidget
+class TrajectoryWindow : public QGLWidget
 {
     Q_OBJECT
 public:
@@ -19,6 +20,12 @@ signals:
 
 public slots:
     void loop();
+
+protected:
+    void initializeGL();
+    void resizeGL(int w, int h);
+    void paintGL();
+    void drawRect(double w, double h);
 
 private:
     CustomLabel *frameLabel;

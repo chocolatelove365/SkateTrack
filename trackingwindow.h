@@ -70,7 +70,7 @@ private:
     static double likelihood(int x, int y, cv::Mat image1, cv::Mat image2, cv::Mat image3);
     void updateTrajectory();
     void drawTrajectory(cv::Mat image, int radius, int len);
-    void render(cv::Mat image);
+    void draw(cv::Mat image);
 };
 
 #endif // TRACKINGWINDOW_H

@@ -27,7 +27,8 @@ class TrackingView : public QGLWidget
 public:
     explicit TrackingView(QWidget *parent = nullptr);
     ~TrackingView();
-    cv::Mat image;
+    void init(int imageWidth, int imageHeight);
+    uint8_t * image;
 signals:
 
 public slots:
@@ -35,7 +36,6 @@ public slots:
 
 protected:
     qreal windowPixelRatio();
-    void load();
     void updateTexture(uint8_t *image);
 
     void initializeGL();
@@ -48,10 +48,9 @@ protected:
     void drawXYZAxis(double len);
 
 private:
-//    QTimer *timer;
-//    cv::Mat image;
     uint32_t textures[1];
-    int imageWidth, imageHeight;
+//    uint8_t * image;
+    int _imageWidth, _imageHeight;
     int viewX, viewY, viewWidth, viewHeight;
     double aspect;
     double fovy;

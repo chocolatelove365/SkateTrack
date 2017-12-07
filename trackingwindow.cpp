@@ -21,11 +21,9 @@ TrackingWindow::TrackingWindow(QWidget *parent) :
     connect(playButton, SIGNAL(clicked()), this, SLOT(playButtonClicked()));
     connect(timeSlider, SIGNAL(valueChanged(int)), this, SLOT(timeSliderValueChanged(int)));
     connect(timer, SIGNAL(timeout()), this, SLOT(loop()));
-//    connect(timer, SIGNAL(timeout()), trackingView, SLOT(loop()));
     connect(timer, SIGNAL(timeout()), trajWin, SLOT(loop()));
 
-//    mainLayout->addWidget(trackingView);
-    mainLayout->addWidget(frameLabel);
+    mainLayout->addWidget(trackingView);
     mainLayout->addWidget(playButton);
     mainLayout->addWidget(timeSlider);
     mainWidget->setLayout(mainLayout);
@@ -65,6 +63,8 @@ void TrackingWindow::load(){
 //    timer->setInterval(1000 / fps);
     timer->setInterval(1);
     framePos = 0;
+
+    trackingView->init(width, height);
 
     QString backgroundFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/NHK杯連続写真01/RM1_0001_0781_background.JPG";
     QString maskFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/RM1_mask.JPG";
@@ -166,17 +166,21 @@ void TrackingWindow::drawTrajectory(cv::Mat image, int radius, int len){
     int begin = len < totalLen ? totalLen - len : 0;
     Scalar color;
     for(int i = begin; i <  totalLen; i++){
-        int x = trajectory[i].x;
-        int y = trajectory[i].y;
+        int x = trajectory[i].x * pow(2, pyrLevel);
+        int y = trajectory[i].y * pow(2, pyrLevel);
         int c = (double)255 * (i - begin) / len;
         color = Scalar(255 - c, c, c);
         circle(image, Point(x, y), radius, color, -1);
     }
 }
 
-void TrackingWindow::render(cv::Mat image){
-    pf::draw_particles(particles, image, 0, 255, 0);
-    drawTrajectory(image, 3, 15);
+void TrackingWindow::draw(cv::Mat image){
+    for(int i = 0; i < particles.size(); i++){
+        int x = particles[i].x * pow(2, pyrLevel);
+        int y = particles[i].y * pow(2, pyrLevel);
+        circle(image, Point(x, y), 6, Scalar(0, 255, 0), -1);
+    }
+    drawTrajectory(image, 12, 15);
 }
 
 void TrackingWindow::loop(){
@@ -193,7 +197,7 @@ void TrackingWindow::loop(){
     }
     else{
         cv::resize(frame, lowFrame, cv::Size(lowWidth, lowHeight));
-        cv::Mat outFrame = lowFrame.clone();
+        cv::Mat outFrame = frame.clone();
 
         // Update particles
         pf::resample(particles);
@@ -201,10 +205,8 @@ void TrackingWindow::loop(){
         pf::weight(particles, lowFrame, lowBackground, lowMask, likelihood);
 
         // Render
-        render(outFrame);
-        qFrame = ImageFormat::Mat2QImage(outFrame);
-        frameLabel->setPixmap(QPixmap::fromImage(qFrame));
-        trackingView->image = frame;
+        draw(outFrame);
+        trackingView->image = outFrame.data;
         trackingView->updateGL();
     }
 }

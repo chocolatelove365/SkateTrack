@@ -2,17 +2,9 @@
 
 TrackingView::TrackingView(QWidget *parent) : QGLWidget(parent)
 {
-//    timer = new QTimer();
-//    connect(timer, SIGNAL(timeout()), this, SLOT(loop()));
-
-    load();
-
-//    timer->setInterval(1);
-//    timer->start();
 }
 
 TrackingView::~TrackingView(){
-//    delete timer;
 }
 
 void TrackingView::loop(){
@@ -34,8 +26,8 @@ void TrackingView::mousePressEvent(QMouseEvent *event){
     int realY = event->y() * pixelRatio;
     double  normalizedX = (double)(realX - viewX) / viewWidth * 2.0 - 1.0;
     double normalizedY = 1.0 - (double)(realY - viewY) / viewHeight * 2.0;
-    double xInImage =  (double)(realX - viewX) / viewWidth * imageWidth;
-    double yInImage = (double)(realY - viewY) / viewHeight * imageHeight;
+    double xInImage =  (double)(realX - viewX) / viewWidth * _imageWidth;
+    double yInImage = (double)(realY - viewY) / viewHeight * _imageHeight;
     double X, Y;
     Converter::convert2Dto3D(P, Rt, normalizedX, normalizedY, 0.0, X, Y);
     qDebug() << QString::number(xInImage) + ", " + QString::number(yInImage);
@@ -43,15 +35,17 @@ void TrackingView::mousePressEvent(QMouseEvent *event){
     qDebug() << "X: " + QString::number(X) + ", Y: " + QString::number(Y);
 }
 
-void TrackingView::load(){
-    QString imageFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/image_calibration.JPG";
-    image = cv::imread(imageFileName.toStdString().c_str() );
-    imageWidth = image.size().width;
-    imageHeight = image.size().height;
-    aspect = (double)imageWidth / imageHeight;
+void TrackingView::init(int imageWidth, int imageHeight){
+//    QString imageFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/image_calibration.JPG";
+//    cv::Mat image = cv::imread(imageFileName.toStdString().c_str() );
+//    this->image = image.data;
+    image = NULL;
+    _imageWidth = imageWidth;
+    _imageHeight = imageHeight;
+    aspect = (double)_imageWidth / _imageHeight;
     fovy = 48.6681031196 / 180 * M_PI;
     far = 100.0;
-   near = 50.0;
+   near = 1.0;
    double f = 1 / tan(fovy / 2);
    P << f / aspect, 0.0, 0.0, 0.0,
            0.0, f, 0.0, 0.0,
@@ -63,21 +57,28 @@ void TrackingView::load(){
            0.0, 0.0, 0.0, 1.0;
 }
 
+//void TrackingView::render(uint8_t *image){
+
+//}
+
 void TrackingView::updateTexture(uint8_t *image){
-    glGenTextures(1, textures);
-    glBindTexture(GL_TEXTURE_2D, textures[0]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0,
-                 GL_BGR_EXT, GL_UNSIGNED_BYTE, image);
+    if(image){
+        glBindTexture(GL_TEXTURE_2D, textures[0]);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,  _imageWidth, _imageHeight,
+                        GL_BGR_EXT, GL_UNSIGNED_BYTE, image);
+        glBindTexture(GL_TEXTURE_2D,0);
+    }
 }
 
 void TrackingView::initializeGL(){
+    glGenTextures(1, textures);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0,
-                 GL_BGR_EXT, GL_UNSIGNED_BYTE, image.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, _imageWidth, _imageHeight, 0,
+                 GL_BGR_EXT, GL_UNSIGNED_BYTE, NULL);
+    glBindTexture(GL_TEXTURE_2D,0);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
 }
@@ -97,28 +98,31 @@ void TrackingView::resizeGL(int w, int h){
 }
 
 void TrackingView::paintGL(){
-    updateTexture(image.data);
+    if(!image) return;
+    updateTexture(image);
 
     glViewport(viewX, viewY, viewWidth, viewHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0.0, imageWidth, imageHeight, 0.0, -1.0, 1.0);
+    glOrtho(0.0, _imageWidth, _imageHeight, 0.0, -1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glColor4d(1.0, 1.0, 1.0, 1.0);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
     glEnable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);
     glTexCoord2d(0.0, 0.0);
     glVertex3d(0.0, 0.0, 0.0);
     glTexCoord2d(0.0, 1.0);
-    glVertex3d(0.0,imageHeight, 0.0);
+    glVertex3d(0.0,_imageHeight, 0.0);
     glTexCoord2d(1.0, 1.0);
-    glVertex3d(imageWidth, imageHeight, 0.0);
+    glVertex3d(_imageWidth, _imageHeight, 0.0);
     glTexCoord2d(1.0, 0.0);
-    glVertex3d(imageWidth, 0.0, 0.0);
+    glVertex3d(_imageWidth, 0.0, 0.0);
     glEnd();
     glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixd(P.data());
