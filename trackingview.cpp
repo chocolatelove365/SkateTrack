@@ -35,21 +35,17 @@ void TrackingView::mousePressEvent(QMouseEvent *event){
     qDebug() << "X: " + QString::number(X) + ", Y: " + QString::number(Y);
 }
 
-void TrackingView::init(int imageWidth, int imageHeight){
-//    QString imageFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/image_calibration.JPG";
-//    cv::Mat image = cv::imread(imageFileName.toStdString().c_str() );
-//    this->image = image.data;
-    image = NULL;
+void TrackingView::init(int imageWidth, int imageHeight, double fovy ){
     _imageWidth = imageWidth;
     _imageHeight = imageHeight;
-    aspect = (double)_imageWidth / _imageHeight;
-    fovy = 48.6681031196 / 180 * M_PI;
-    far = 100.0;
-   near = 1.0;
-   double f = 1 / tan(fovy / 2);
-   P << f / aspect, 0.0, 0.0, 0.0,
+    _aspect = (double)_imageWidth / _imageHeight;
+    _fovy = 48.6681031196 / 180 * M_PI;
+    _far = 100.0;
+   _near = 1.0;
+   double f = 1 / tan(_fovy / 2);
+   P << f / _aspect, 0.0, 0.0, 0.0,
            0.0, f, 0.0, 0.0,
-           0.0, 0.0, (far + near) / (near - far), 2 * far * near / (near - far),
+           0.0, 0.0, (_far + _near) / (_near - _far), 2 * _far * _near / (_near - _far),
            0.0, 0.0, -1.0, 0.0;
    Rt << 0.84080619, -0.54098684, -0.01945062, -0.06907567,
            0.13738744, 0.17849864, 0.97430122, -0.00576485,
@@ -84,14 +80,14 @@ void TrackingView::initializeGL(){
 }
 
 void TrackingView::resizeGL(int w, int h){
-    qDebug() << "w: " + QString::number(w) + ", h: " + QString::number(h);
-    if(w > h * aspect){
-        viewWidth = (int)(h * aspect);
+//    qDebug() << "w: " + QString::number(w) + ", h: " + QString::number(h);
+    if(w > h * _aspect){
+        viewWidth = (int)(h * _aspect);
         viewHeight = h;
     }
     else{
         viewWidth = w;
-        viewHeight = (int)(w / aspect);
+        viewHeight = (int)(w / _aspect);
     }
     viewX = (w - viewWidth) / 2;
     viewY = (h - viewHeight) / 2;

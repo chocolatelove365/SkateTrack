@@ -21,7 +21,7 @@ TrackingWindow::TrackingWindow(QWidget *parent) :
     connect(playButton, SIGNAL(clicked()), this, SLOT(playButtonClicked()));
     connect(timeSlider, SIGNAL(valueChanged(int)), this, SLOT(timeSliderValueChanged(int)));
     connect(timer, SIGNAL(timeout()), this, SLOT(loop()));
-    connect(timer, SIGNAL(timeout()), trajWin, SLOT(loop()));
+//    connect(timer, SIGNAL(timeout()), trajWin, SLOT(loop()));
 
     mainLayout->addWidget(trackingView);
     mainLayout->addWidget(playButton);
@@ -64,7 +64,21 @@ void TrackingWindow::load(){
     timer->setInterval(1);
     framePos = 0;
 
-    trackingView->init(width, height);
+    double _aspect = (double)width / height;
+    double _fovy = 48.6681031196 / 180 * M_PI;
+    double _far = 100.0;
+   double _near = 1.0;
+   double f = 1 / tan(_fovy / 2);
+   P << f / _aspect, 0.0, 0.0, 0.0,
+           0.0, f, 0.0, 0.0,
+           0.0, 0.0, (_far + _near) / (_near - _far), 2 * _far * _near / (_near - _far),
+           0.0, 0.0, -1.0, 0.0;
+   Rt << 0.84080619, -0.54098684, -0.01945062, -0.06907567,
+           0.13738744, 0.17849864, 0.97430122, -0.00576485,
+           -0.5236122, -0.82187068, 0.22440754, -53.0946064,
+           0.0, 0.0, 0.0, 1.0;
+
+    trackingView->init(width, height, _fovy);
 
     QString backgroundFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/NHK杯連続写真01/RM1_0001_0781_background.JPG";
     QString maskFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/RM1_mask.JPG";
@@ -158,6 +172,14 @@ void TrackingWindow::updateTrajectory(){
     Target target;
     target.x = cx;
     target.y = cy;
+
+    double normalizedX = (double)cx / lowWidth * 2.0 - 1.0;
+    double normalizedY = 1.0 - (double)cy / lowHeight * 2.0;
+    double X, Y;
+    Converter::convert2Dto3D(P, Rt, normalizedX, normalizedY, 0.5, X, Y);
+    target.X = X;
+    target.Y = Y;
+    target.Z = 0.5;
     trajectory.push_back(target);
 }
 
@@ -207,6 +229,8 @@ void TrackingWindow::loop(){
         // Render
         draw(outFrame);
         trackingView->image = outFrame.data;
+//        trackingView->updateTexture(outFrame.data);
         trackingView->updateGL();
+        trajWin->updateGL();
     }
 }

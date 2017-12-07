@@ -9,6 +9,7 @@
 #include <QDebug>
 #include "customlabel.h"
 #include "imageformat.h"
+#include "trajectory.h"
 
 class TrajectoryWindow : public QGLWidget
 {
@@ -26,6 +27,7 @@ protected:
     void resizeGL(int w, int h);
     void paintGL();
     void drawRect(double w, double h);
+    void drawCircle(double x, double y, double radius, int n);
 
 private:
     CustomLabel *frameLabel;

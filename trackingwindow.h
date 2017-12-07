@@ -9,20 +9,19 @@
 #include <QSlider>
 #include <QTimer>
 #include <QDebug>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 #include "trajectorywindow.h"
 #include "imageformat.h"
 #include "particle_filter.hpp"
 #include "customlabel.h"
 #include "trackingview.h"
+#include "trajectory.h"
 
 namespace Ui {
 class TrackingWindow;
 }
 
-struct Target{
-    double x, y;
-    double X, Y, Z;
-};
 
 class TrackingWindow : public QMainWindow
 {
@@ -32,6 +31,7 @@ public:
     explicit TrackingWindow(QWidget *parent = 0);
     ~TrackingWindow();
 
+    vector<Target> trajectory;
 private slots:
     void frameLabelMousePressed(QPoint point);
     void playButtonClicked();
@@ -59,10 +59,11 @@ private:
     int width, height, lowWidth, lowHeight;
     int nFrames;
     int fps;
+    Eigen::Matrix4d P, Rt;
 
     vector<pf::Particle> particles;
     int nParticles;
-    vector<Target> trajectory;
+//    vector<Target> trajectory;
 
     bool running;
 
