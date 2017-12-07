@@ -6,6 +6,8 @@ TrackingWindow::TrackingWindow(QWidget *parent) :
     ui(new Ui::TrackingWindow)
 {
     ui->setupUi(this);
+    resize(800, 600);
+
     trajWin = new TrajectoryWindow(this);
     trajWin->show();
 
@@ -17,11 +19,11 @@ TrackingWindow::TrackingWindow(QWidget *parent) :
     timeSlider = new QSlider(Qt::Horizontal);
     timer = new QTimer(this);
 
-    connect(frameLabel, SIGNAL(mousePressed(QPoint)), this, SLOT(frameLabelMousePressed(QPoint)));
+//    connect(frameLabel, SIGNAL(mousePressed(QPoint)), this, SLOT(frameLabelMousePressed(QPoint)));
+    connect(trackingView, SIGNAL(mousePressed(QPoint)), this, SLOT(frameLabelMousePressed(QPoint)));
     connect(playButton, SIGNAL(clicked()), this, SLOT(playButtonClicked()));
     connect(timeSlider, SIGNAL(valueChanged(int)), this, SLOT(timeSliderValueChanged(int)));
     connect(timer, SIGNAL(timeout()), this, SLOT(loop()));
-//    connect(timer, SIGNAL(timeout()), trajWin, SLOT(loop()));
 
     mainLayout->addWidget(trackingView);
     mainLayout->addWidget(playButton);
@@ -78,7 +80,7 @@ void TrackingWindow::load(){
            -0.5236122, -0.82187068, 0.22440754, -53.0946064,
            0.0, 0.0, 0.0, 1.0;
 
-    trackingView->init(width, height, _fovy);
+    trackingView->init(width, height, P, Rt);
 
     QString backgroundFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/NHK杯連続写真01/RM1_0001_0781_background.JPG";
     QString maskFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/RM1_mask.JPG";
@@ -106,8 +108,8 @@ double TrackingWindow::likelihood(int x, int y, cv::Mat image1, cv::Mat image2, 
 }
 
 void TrackingWindow::frameLabelMousePressed(QPoint point){
-    int x = point.x();
-    int y = point.y();
+    int x = point.x() * lowWidth / width;
+    int y = point.y() * lowHeight / height;
     for(int i = 0; i < (int)particles.size(); i++){
         particles[i].x = x;
         particles[i].y = y;
@@ -176,10 +178,11 @@ void TrackingWindow::updateTrajectory(){
     double normalizedX = (double)cx / lowWidth * 2.0 - 1.0;
     double normalizedY = 1.0 - (double)cy / lowHeight * 2.0;
     double X, Y;
-    Converter::convert2Dto3D(P, Rt, normalizedX, normalizedY, 0.5, X, Y);
+    double Z = 0.5;
+    Converter::convert2Dto3D(P, Rt, normalizedX, normalizedY, Z, X, Y);
     target.X = X;
     target.Y = Y;
-    target.Z = 0.5;
+    target.Z = Z;
     trajectory.push_back(target);
 }
 
@@ -229,7 +232,6 @@ void TrackingWindow::loop(){
         // Render
         draw(outFrame);
         trackingView->image = outFrame.data;
-//        trackingView->updateTexture(outFrame.data);
         trackingView->updateGL();
         trajWin->updateGL();
     }

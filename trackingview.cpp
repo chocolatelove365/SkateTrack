@@ -1,14 +1,11 @@
 #include "trackingview.h"
+#include "trackingwindow.h"
 
 TrackingView::TrackingView(QWidget *parent) : QGLWidget(parent)
 {
 }
 
 TrackingView::~TrackingView(){
-}
-
-void TrackingView::loop(){
-    updateGL();
 }
 
 qreal TrackingView::windowPixelRatio() {
@@ -28,34 +25,17 @@ void TrackingView::mousePressEvent(QMouseEvent *event){
     double normalizedY = 1.0 - (double)(realY - viewY) / viewHeight * 2.0;
     double xInImage =  (double)(realX - viewX) / viewWidth * _imageWidth;
     double yInImage = (double)(realY - viewY) / viewHeight * _imageHeight;
-    double X, Y;
-    Converter::convert2Dto3D(P, Rt, normalizedX, normalizedY, 0.0, X, Y);
-    qDebug() << QString::number(xInImage) + ", " + QString::number(yInImage);
-    qDebug() << QString::number(normalizedX) + ", " + QString::number(normalizedY);
-    qDebug() << "X: " + QString::number(X) + ", Y: " + QString::number(Y);
+    QPoint p(xInImage, yInImage);
+    emit mousePressed( p );
 }
 
-void TrackingView::init(int imageWidth, int imageHeight, double fovy ){
+void TrackingView::init(int imageWidth, int imageHeight, Eigen::Matrix4d P, Eigen::Matrix4d Rt){
     _imageWidth = imageWidth;
     _imageHeight = imageHeight;
     _aspect = (double)_imageWidth / _imageHeight;
-    _fovy = 48.6681031196 / 180 * M_PI;
-    _far = 100.0;
-   _near = 1.0;
-   double f = 1 / tan(_fovy / 2);
-   P << f / _aspect, 0.0, 0.0, 0.0,
-           0.0, f, 0.0, 0.0,
-           0.0, 0.0, (_far + _near) / (_near - _far), 2 * _far * _near / (_near - _far),
-           0.0, 0.0, -1.0, 0.0;
-   Rt << 0.84080619, -0.54098684, -0.01945062, -0.06907567,
-           0.13738744, 0.17849864, 0.97430122, -0.00576485,
-           -0.5236122, -0.82187068, 0.22440754, -53.0946064,
-           0.0, 0.0, 0.0, 1.0;
+    _P = P;
+    _Rt = Rt;
 }
-
-//void TrackingView::render(uint8_t *image){
-
-//}
 
 void TrackingView::updateTexture(uint8_t *image){
     if(image){
@@ -80,7 +60,6 @@ void TrackingView::initializeGL(){
 }
 
 void TrackingView::resizeGL(int w, int h){
-//    qDebug() << "w: " + QString::number(w) + ", h: " + QString::number(h);
     if(w > h * _aspect){
         viewWidth = (int)(h * _aspect);
         viewHeight = h;
@@ -121,9 +100,9 @@ void TrackingView::paintGL(){
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glMatrixMode(GL_PROJECTION);
-    glLoadMatrixd(P.data());
+    glLoadMatrixd(_P.data());
     glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixd(Rt.data());
+    glLoadMatrixd(_Rt.data());
     drawXYZAxis(20.0);
     drawRect(40, 30);
     drawCircle(0, 0, 5, 64);

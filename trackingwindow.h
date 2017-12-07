@@ -30,8 +30,9 @@ class TrackingWindow : public QMainWindow
 public:
     explicit TrackingWindow(QWidget *parent = 0);
     ~TrackingWindow();
-
     vector<Target> trajectory;
+    Eigen::Matrix4d P, Rt;
+
 private slots:
     void frameLabelMousePressed(QPoint point);
     void playButtonClicked();
@@ -59,11 +60,9 @@ private:
     int width, height, lowWidth, lowHeight;
     int nFrames;
     int fps;
-    Eigen::Matrix4d P, Rt;
 
     vector<pf::Particle> particles;
     int nParticles;
-//    vector<Target> trajectory;
 
     bool running;
 

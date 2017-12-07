@@ -20,7 +20,6 @@ public:
 signals:
 
 public slots:
-    void loop();
 
 protected:
     void initializeGL();
