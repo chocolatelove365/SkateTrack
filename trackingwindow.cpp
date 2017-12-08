@@ -137,6 +137,20 @@ double TrackingWindow::likelihood(int x, int y, cv::Mat image1, cv::Mat image2, 
     }
 }
 
+double TrackingWindow::likelihood(int x, int y, cv::Mat image){
+    int width = image.cols;
+    int height = image.rows;
+    if(x >= 0 && x < width && y >= 0 && y < height){
+        if(image.at<uchar>(y, x) == 0) return 0.0001;
+        else{
+            return (double)image.at<uchar>(y, x);
+        }
+    }
+    else{
+        return 0.0001;
+    }
+}
+
 void TrackingWindow::trackingViewMousePressed(QPoint point){
     int x = point.x() * lowWidth / width;
     int y = point.y() * lowHeight / height;
@@ -218,6 +232,27 @@ void TrackingWindow::updateTrajectory(){
     target.Y = Y;
     target.Z = Z;
     trajectory.push_back(target);
+
+#if SMOOTH_TRAJECTORY
+    int n = trajectory.size();
+    int m = 3;
+    if(n >= m){
+        double sx, sy, sX, sY, sZ;
+        sx = sy = sX = sY = sZ = 0;
+        for(int i = 1; i < m+1; i++){
+            sx += trajectory[n-i].x;
+            sy += trajectory[n-i].y;
+            sX += trajectory[n-i].X;
+            sY += trajectory[n-i].Y;
+            sZ += trajectory[n-i].Z;
+        }
+        sx /= m; sy /= m; sX /= m; sY /= m; sZ /= m;
+        Target target;
+        target.x = sx; target.y = sy; target.X = sX; target.Y = sY; target.Z = sZ;
+        smoothTrajectory.push_back(target);
+    }
+
+#endif
 }
 
 void TrackingWindow::drawTrajectory(cv::Mat image, int radius, int len){
@@ -244,7 +279,7 @@ void TrackingWindow::draw(cv::Mat image){
 
 void TrackingWindow::loop(){
     static int count = 0;
-    if(running && count >= 0){
+    if(running && count >= 2){
         framePos++;
         timeSlider->blockSignals(true);
         timeSlider->setValue(framePos);
@@ -263,18 +298,57 @@ void TrackingWindow::loop(){
 
         // Update particles
         pf::resample(particles);
+#if 0
+        double var = 100.0;
+#else
         Eigen::Vector4d worldPos, cameraPos;
         worldPos << trajectory.back().X, trajectory.back().Y, trajectory.back().Z, 1.0;
         cameraPos = Rt * worldPos;
 //        qDebug() << "cameraPos: X = " + QString::number(cameraPos[0]) + ", Y = " + QString::number(cameraPos[1]) + ", Z = " + QString::number(cameraPos[2]);
-//        double var = 100.0 / (cameraPos[0]*cameraPos[0]+cameraPos[1]*cameraPos[1]+cameraPos[2]*cameraPos[2]) * 60 * 60;
-        double var = 100.0;
+        double var = 100.0 / (cameraPos[0]*cameraPos[0]+cameraPos[1]*cameraPos[1]+cameraPos[2]*cameraPos[2]) * 40 * 40;
+#endif
+
+#if 1
+        cv::Mat lowFrameGray, lowBackgroundGray, lowMaskGray, diff, diffWithMask;
+        cv::cvtColor(lowFrame, lowFrameGray, CV_BGR2GRAY);
+        cv::cvtColor(lowBackground, lowBackgroundGray, CV_BGR2GRAY);
+        cv::cvtColor(lowMask, lowMaskGray, CV_BGR2GRAY);
+        cv::absdiff(lowFrameGray, lowBackgroundGray, diff);
+        cv::threshold(diff, diff, 0, 255, CV_THRESH_BINARY|CV_THRESH_OTSU);
+        diff.copyTo(diffWithMask, lowMaskGray);
+        cv::dilate(diffWithMask, diffWithMask, Mat(), Point(-1, -1), 3);
+        cv::erode(diffWithMask, diffWithMask, Mat(), Point(-1, -1), 3);
+
+        std::vector< std::vector< cv::Point > > contours, contours_subset;
+        cv::findContours(diffWithMask, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+        for(int i = 0; i < contours.size(); i++){
+            double area = contourArea(contours.at(i));
+            if(area > 150.0){
+                contours_subset.push_back(contours.at(i));
+            }
+        }
+        drawContours(diffWithMask,contours_subset,-1,0,-1);
+
+//        double var = 100.0;
         pf::predict(particles, var);
-        pf::weight(particles, lowFrame, lowBackground, lowMask, likelihood);
+        pf::weight(particles, diffWithMask, likelihood);
+
+        cv::cvtColor(diffWithMask, diffWithMask, CV_GRAY2BGR);
+        cv::Mat tmp;
+        cv::resize(diffWithMask, tmp, cv::Size(width, height));
 
         // Render
         draw(outFrame);
+
         trackingView->image = outFrame.data;
+//        trackingView->image = tmp.data;
+#else
+        pf::predict(particles, var);
+        pf::weight(particles, lowFrame, lowBackground, lowMask, likelihood);
+        // Render
+        draw(outFrame);
+        trackingView->image = outFrame.data;
+#endif
         trackingView->updateGL();
         trajWin->updateGL();
     }

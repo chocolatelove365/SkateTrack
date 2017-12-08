@@ -26,6 +26,7 @@ protected:
     void resizeGL(int w, int h);
     void paintGL();
     void drawRect(double w, double h);
+    void drawTrajectory();
     void drawCircle(double X, double Y, double Z, double radius, int n);
 
 private:

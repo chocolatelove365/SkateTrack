@@ -29,6 +29,7 @@ public:
     ~TrackingView();
     void init(int imageWidth, int imageHeight, Eigen::Matrix4d P, Eigen::Matrix4d Rt);
     uint8_t * image;
+    int _imageWidth, _imageHeight;
     void updateTexture(uint8_t *image);
     void mousePressEvent(QMouseEvent *event);
 
@@ -50,7 +51,6 @@ protected:
 
 private:
     uint32_t textures[1];
-    int _imageWidth, _imageHeight;
     int viewX, viewY, viewWidth, viewHeight;
     double _aspect;
     Eigen::Matrix4d _P;

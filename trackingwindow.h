@@ -21,6 +21,8 @@
 #include "trackingview.h"
 #include "trajectory.h"
 
+#define SMOOTH_TRAJECTORY 1
+
 namespace Ui {
 class TrackingWindow;
 }
@@ -33,7 +35,7 @@ class TrackingWindow : public QMainWindow
 public:
     explicit TrackingWindow(QWidget *parent = 0);
     ~TrackingWindow();
-    vector<Target> trajectory;
+    vector<Target> trajectory, smoothTrajectory;
     Eigen::Matrix4d P, Rt;
 
 private slots:
@@ -72,6 +74,7 @@ private:
     void saveCSV(const QString &fileName);
     void load();
     static double likelihood(int x, int y, cv::Mat image1, cv::Mat image2, cv::Mat image3);
+    static double likelihood(int x, int y, cv::Mat image);
     void updateTrajectory();
     void drawTrajectory(cv::Mat image, int radius, int len);
     void draw(cv::Mat image);

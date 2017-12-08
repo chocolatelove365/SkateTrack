@@ -23,6 +23,7 @@ void TrajectoryWindow::paintGL(){
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     drawRect(40, 30);
+    drawTrajectory();
 }
 
 void TrajectoryWindow::drawRect(double w, double h){
@@ -33,7 +34,9 @@ void TrajectoryWindow::drawRect(double w, double h){
     glVertex3d(-w/2, -h/2, 0.0);
     glVertex3d(+w/2, -h/2, 0.0);
     glEnd();
+}
 
+void TrajectoryWindow::drawTrajectory(){
     std::vector<Target> trajectory = ((TrackingWindow*)(parent()))->trajectory;
     int totalLen = (int)trajectory.size();
     int len = 15;
@@ -48,6 +51,20 @@ void TrajectoryWindow::drawRect(double w, double h){
         drawCircle(X, Y, Z, radius, 64);
     }
 
+#if SMOOTH_TRAJECTORY
+    std::vector<Target> smoothTrajectory = ((TrackingWindow*)(parent()))->smoothTrajectory;
+    int sTotalLen = (int)smoothTrajectory.size();
+    glColor4d(0.0, 1.0, 0.0, 1.0);
+    glBegin(GL_LINE_STRIP);
+    for(int i = 0; i <  sTotalLen; i++){
+        double X = smoothTrajectory[i].X;
+        double Y = smoothTrajectory[i].Y;
+        double Z = smoothTrajectory[i].Z;
+        glVertex3d(X, Y, Z);
+    }
+    glEnd();
+
+#else
     glColor4d(1.0, 1.0, 1.0, 1.0);
     glBegin(GL_LINE_STRIP);
     for(int i = 0; i <  totalLen; i++){
@@ -57,6 +74,7 @@ void TrajectoryWindow::drawRect(double w, double h){
         glVertex3d(X, Y, Z);
     }
     glEnd();
+#endif
 }
 
 void  TrajectoryWindow::drawCircle(double X, double Y, double Z, double radius, int n){
