@@ -35,25 +35,36 @@ void TrajectoryWindow::drawRect(double w, double h){
     glEnd();
 
     std::vector<Target> trajectory = ((TrackingWindow*)(parent()))->trajectory;
-    int len = 15;
     int totalLen = (int)trajectory.size();
+    int len = 15;
     int begin = len < totalLen ? totalLen - len : 0;
     for(int i = begin; i <  totalLen; i++){
         double X = trajectory[i].X;
         double Y = trajectory[i].Y;
+        double Z = trajectory[i].Z;
         double c = (double) (i - begin) / len;
         glColor4d(c, c, 1.0 - c, 1.0);
         double radius = 0.5;
-        drawCircle(X, Y, radius, 64);
+        drawCircle(X, Y, Z, radius, 64);
     }
+
+    glColor4d(1.0, 1.0, 1.0, 1.0);
+    glBegin(GL_LINE_STRIP);
+    for(int i = 0; i <  totalLen; i++){
+        double X = trajectory[i].X;
+        double Y = trajectory[i].Y;
+        double Z = trajectory[i].Z;
+        glVertex3d(X, Y, Z);
+    }
+    glEnd();
 }
 
-void  TrajectoryWindow::drawCircle(double x, double y, double radius, int n){
+void  TrajectoryWindow::drawCircle(double X, double Y, double Z, double radius, int n){
     glBegin(GL_POLYGON);
     for(int i = 0; i < n; i++){
-        double tmpX = radius * cos(2 * M_PI * i / n) + x;
-        double tmpY = radius * sin(2 * M_PI * i / n) + y;
-        glVertex3d(tmpX, tmpY, 0.0);
+        double tmpX = radius * cos(2 * M_PI * i / n) + X;
+        double tmpY = radius * sin(2 * M_PI * i / n) + Y;
+        glVertex3d(tmpX, tmpY, Z);
     }
     glEnd();
 }

@@ -9,6 +9,9 @@
 #include <QSlider>
 #include <QTimer>
 #include <QDebug>
+#include <QMessageBox>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include "trajectorywindow.h"
@@ -34,7 +37,7 @@ public:
     Eigen::Matrix4d P, Rt;
 
 private slots:
-    void frameLabelMousePressed(QPoint point);
+    void trackingViewMousePressed(QPoint point);
     void playButtonClicked();
     void timeSliderValueChanged(int value);
     void loop();
@@ -47,15 +50,14 @@ private:
     TrajectoryWindow *trajWin;
 
     TrackingView *trackingView;
-    CustomLabel *frameLabel;
     QPushButton *playButton;
     QSlider *timeSlider;
     QTimer *timer;
 
+    QString videoFileName, backgroundFileName, maskFileName;
     cv::VideoCapture cap;
     int framePos;
     cv::Mat frame, background, mask, lowFrame, lowBackground, lowMask;
-    QImage qFrame;
     int pyrLevel;
     int width, height, lowWidth, lowHeight;
     int nFrames;
@@ -66,6 +68,8 @@ private:
 
     bool running;
 
+    void loadConfig(const QString &fileName);
+    void saveCSV(const QString &fileName);
     void load();
     static double likelihood(int x, int y, cv::Mat image1, cv::Mat image2, cv::Mat image3);
     void updateTrajectory();

@@ -55,3 +55,6 @@ LIBS += -L/usr/local/Cellar/opencv/3.3.1_1/lib \
     -lopencv_imgcodecs \
      -lopencv_highgui \
     -lopencv_videoio
+
+DISTFILES += \
+    config.json

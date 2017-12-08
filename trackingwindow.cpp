@@ -14,13 +14,11 @@ TrackingWindow::TrackingWindow(QWidget *parent) :
     QWidget *mainWidget = new QWidget();
     QVBoxLayout *mainLayout = new QVBoxLayout();
     trackingView = new TrackingView();
-    frameLabel = new CustomLabel();
     playButton = new QPushButton();
     timeSlider = new QSlider(Qt::Horizontal);
     timer = new QTimer(this);
 
-//    connect(frameLabel, SIGNAL(mousePressed(QPoint)), this, SLOT(frameLabelMousePressed(QPoint)));
-    connect(trackingView, SIGNAL(mousePressed(QPoint)), this, SLOT(frameLabelMousePressed(QPoint)));
+    connect(trackingView, SIGNAL(mousePressed(QPoint)), this, SLOT(trackingViewMousePressed(QPoint)));
     connect(playButton, SIGNAL(clicked()), this, SLOT(playButtonClicked()));
     connect(timeSlider, SIGNAL(valueChanged(int)), this, SLOT(timeSliderValueChanged(int)));
     connect(timer, SIGNAL(timeout()), this, SLOT(loop()));
@@ -35,7 +33,7 @@ TrackingWindow::TrackingWindow(QWidget *parent) :
 
     load();
 
-    nParticles = 500;
+    nParticles = 1000;
     pf::init(particles, nParticles, lowWidth / 2, lowHeight / 2);
 
     timer->start();
@@ -46,14 +44,52 @@ TrackingWindow::~TrackingWindow()
     delete ui;
 }
 
+void TrackingWindow::loadConfig(const QString &fileName){
+    QFile loadFile(fileName);
+    if (!loadFile.open(QIODevice::ReadOnly))
+    {
+        qWarning("Couldn't open save.json");
+        return;
+    }
+    QByteArray loadData = loadFile.readAll();
+    QJsonObject json(QJsonDocument::fromJson(loadData).object());
+    videoFileName =  json["videoFileName"].toString();
+    backgroundFileName = json["backgroundFileName"].toString();
+    maskFileName = json["maskFileName"].toString();
+    pyrLevel =  json["pyrLevel"].toInt();
+    QJsonValue value = json.value("Rt");
+    Rt << 0.84080619, -0.54098684, -0.01945062, -0.06907567,
+            0.13738744, 0.17849864, 0.97430122, -0.00576485,
+            -0.5236122, -0.82187068, 0.22440754, -53.0946064,
+            0.0, 0.0, 0.0, 1.0;
+}
+
+void TrackingWindow::saveCSV(const QString &fileName){
+    stringstream ss;
+    for(int i = 0; i < trajectory.size(); i++)
+    {
+        ss << trajectory[i].X << "," << trajectory[i].Y << endl;
+    }
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::information(this, tr("Unable to open file"),
+                                 file.errorString());
+        return;
+    }
+    QTextStream out(&file);
+    out << ss.str().c_str();
+}
+
 void TrackingWindow::load(){
-    QString videoFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/NHK杯連続写真01/RM1_0001_0781_2.mp4";
+    loadConfig("/Users/tomiya/Desktop/SkateTrack/config.json");
+
     cap.open(videoFileName.toStdString().c_str());
     if(!cap.isOpened()){
             qDebug() << "ERROR: failed to open video.\n";
             return;
     }
-    pyrLevel = 3;
     width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
     height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
     lowWidth = width / pow(2, pyrLevel);
@@ -75,15 +111,9 @@ void TrackingWindow::load(){
            0.0, f, 0.0, 0.0,
            0.0, 0.0, (_far + _near) / (_near - _far), 2 * _far * _near / (_near - _far),
            0.0, 0.0, -1.0, 0.0;
-   Rt << 0.84080619, -0.54098684, -0.01945062, -0.06907567,
-           0.13738744, 0.17849864, 0.97430122, -0.00576485,
-           -0.5236122, -0.82187068, 0.22440754, -53.0946064,
-           0.0, 0.0, 0.0, 1.0;
 
     trackingView->init(width, height, P, Rt);
 
-    QString backgroundFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/NHK杯連続写真01/RM1_0001_0781_background.JPG";
-    QString maskFileName = "/Users/tomiya/Desktop/NHK杯フィギュアスケート/image/RM1_mask.JPG";
     background = cv::imread(backgroundFileName.toStdString().c_str() );
     mask = cv::imread(maskFileName.toStdString().c_str());
     cv::resize(background, lowBackground, cv::Size(lowWidth, lowHeight));
@@ -107,7 +137,7 @@ double TrackingWindow::likelihood(int x, int y, cv::Mat image1, cv::Mat image2, 
     }
 }
 
-void TrackingWindow::frameLabelMousePressed(QPoint point){
+void TrackingWindow::trackingViewMousePressed(QPoint point){
     int x = point.x() * lowWidth / width;
     int y = point.y() * lowHeight / height;
     for(int i = 0; i < (int)particles.size(); i++){
@@ -130,7 +160,8 @@ void TrackingWindow::playButtonClicked(){
 void TrackingWindow::timeSliderValueChanged(int value){
     framePos = value;
     cap.set(CV_CAP_PROP_POS_FRAMES, value);
-    cap >> frame;
+//    trajectory.erase(trajectory.begin() + value, trajectory.begin() + trajectory.size()+1);
+//    cap >> frame;
     loop();
 }
 
@@ -158,7 +189,10 @@ bool TrackingWindow::eventFilter(QObject* obj, QEvent* event){
             cap.set(CV_CAP_PROP_POS_FRAMES, framePos);
             cap >> frame;
             if(!trajectory.empty()) trajectory.pop_back();
-            qDebug() << "framePos: " + QString(framePos);
+        }
+        else if(key->key() == Qt::Key_S){
+            qDebug() << "Save CSV";
+            saveCSV("/Users/tomiya/Desktop/SkateTrack/trajectory.csv");
         }
         else{
             return QObject::eventFilter(obj, event);
@@ -178,7 +212,7 @@ void TrackingWindow::updateTrajectory(){
     double normalizedX = (double)cx / lowWidth * 2.0 - 1.0;
     double normalizedY = 1.0 - (double)cy / lowHeight * 2.0;
     double X, Y;
-    double Z = 0.5;
+    double Z = 0.0;
     Converter::convert2Dto3D(P, Rt, normalizedX, normalizedY, Z, X, Y);
     target.X = X;
     target.Y = Y;
@@ -209,14 +243,17 @@ void TrackingWindow::draw(cv::Mat image){
 }
 
 void TrackingWindow::loop(){
-    if(running){
+    static int count = 0;
+    if(running && count >= 0){
         framePos++;
         timeSlider->blockSignals(true);
         timeSlider->setValue(framePos);
         timeSlider->blockSignals(false);
         cap >> frame;
         updateTrajectory();
+        count = 0;
     }
+    else count++;
     if(frame.empty()){
         running = false;
     }
@@ -226,7 +263,13 @@ void TrackingWindow::loop(){
 
         // Update particles
         pf::resample(particles);
-        pf::predict(particles, 100.0);
+        Eigen::Vector4d worldPos, cameraPos;
+        worldPos << trajectory.back().X, trajectory.back().Y, trajectory.back().Z, 1.0;
+        cameraPos = Rt * worldPos;
+//        qDebug() << "cameraPos: X = " + QString::number(cameraPos[0]) + ", Y = " + QString::number(cameraPos[1]) + ", Z = " + QString::number(cameraPos[2]);
+//        double var = 100.0 / (cameraPos[0]*cameraPos[0]+cameraPos[1]*cameraPos[1]+cameraPos[2]*cameraPos[2]) * 60 * 60;
+        double var = 100.0;
+        pf::predict(particles, var);
         pf::weight(particles, lowFrame, lowBackground, lowMask, likelihood);
 
         // Render

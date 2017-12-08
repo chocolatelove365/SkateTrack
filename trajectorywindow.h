@@ -26,7 +26,7 @@ protected:
     void resizeGL(int w, int h);
     void paintGL();
     void drawRect(double w, double h);
-    void drawCircle(double x, double y, double radius, int n);
+    void drawCircle(double X, double Y, double Z, double radius, int n);
 
 private:
     CustomLabel *frameLabel;
